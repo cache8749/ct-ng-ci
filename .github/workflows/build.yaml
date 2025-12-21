@@ -1,0 +1,54 @@
+name: Build
+on:
+  workflow_dispatch:
+    inputs:
+      CT_PREFIX_DIR:
+        description: "CT_PREFIX_DIR"
+        default: "/opt/x-tools"
+        required: true
+        type: string
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: true
+      matrix:
+        target:
+          - x86_64-unknown-linux-musl
+          - x86_64-unknown-linux-gnu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: true
+      - name: Build
+        shell: bash
+        env:
+          CT_PREFIX_DIR: ${{ inputs.CT_PREFIX_DIR }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          CT_PREFIX_DIR="${CT_PREFIX_DIR%/}"
+          echo "CT_PREFIX_DIR=$CT_PREFIX_DIR"
+          echo "TARGET=$TARGET"
+          sed -i -E \
+            "s
+            ./scripts/make
+          if [ -d "./targets/${TARGET}" ]; then
+            find "./targets/${TARGET}" -type f -name config -print0 | while IFS= read -r -d '' f; do
+              sed -i -E \
+                "s
+                "$f"
+            done
+          fi
+          sudo rm -rf /opt/*
+          ./scripts/make "$TARGET"
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}.tar.xz
+          path: ${{ matrix.target }}.tar.xz
+          if-no-files-found: error
+          retention-days: 30
