@@ -31,8 +31,8 @@ jobs:
         run: |
           set -euo pipefail
           CT_PREFIX_DIR="${CT_PREFIX_DIR%/}"
+          find ./targets -type f -name "config" -exec sed -i "s|\{CT_PREFIX_DIR\}|${CT_PREFIX_DIR}|g" {} +
           sudo mkdir -p ${CT_PREFIX_DIR}
-          for config in $(find targets -type f -name 'config'); do sed -i "s|{CT_PREFIX_DIR}|${CT_PREFIX_DIR}|g" "$config"; done
           cat targets/$TARGET/config
           sudo rm -rf /opt/*
           chmod +x ./scripts/make
