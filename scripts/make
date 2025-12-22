@@ -51,7 +51,7 @@ sudo chmod 0777 /opt
 sudo rm -rf /opt/ct-ng
 pushd builder
 ./bootstrap
-./configure --prefix=/opt/ct-ng
+./configure --prefix=${CT_PREFIX_DIR}
 make -j`nproc`
 sudo make install
 popd
@@ -66,7 +66,7 @@ pushd build
 popd
 
 # tarball
-sudo mv /opt/x-tools/${TARGET} .
+sudo mv ${CT_PREFIX_DIR}/${TARGET} .
 sudo chown -R root:root ${TARGET}
 sudo tar -cJvf ${TARGET}.tar.xz ${TARGET}
 sudo sha256sum ${TARGET}.tar.xz | awk '{ print $1 }' > ${TARGET}.tar.xz.sha256
