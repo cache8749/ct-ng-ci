@@ -51,7 +51,7 @@ sudo chmod 0777 /opt
 sudo rm -rf /opt/ct-ng
 pushd builder
 ./bootstrap
-./configure --prefix=${CT_PREFIX_DIR}
+./configure --prefix=/opt/ct-ng
 make -j`nproc`
 sudo make install
 popd
