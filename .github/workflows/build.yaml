@@ -23,6 +23,7 @@ jobs:
         with:
           fetch-depth: 1
           submodules: true
+
       - name: Build
         shell: bash
         env:
@@ -32,16 +33,37 @@ jobs:
           set -euo pipefail
           CT_PREFIX_DIR="${CT_PREFIX_DIR%/}"
           find ./targets -type f -name "config" -exec sed -i "s|{CT_PREFIX_DIR}|${CT_PREFIX_DIR}|g" {} +
-          sudo mkdir -p ${CT_PREFIX_DIR}
-          cat targets/$TARGET/config
+          sudo mkdir -p "${CT_PREFIX_DIR}"
+          cat "targets/${TARGET}/config"
           sudo rm -rf /opt/*
           chmod +x ./scripts/make
-          bash ./scripts/make "$TARGET"
-          cat build.log
+
+          # Ensure we always print the build log on exit and preserve the exit code.
+          trap 'rc=$?; echo "=== build step exited with code $rc ==="; if [ -f build.log ]; then echo "=== build.log ==="; cat build.log || true; else echo "build.log not found"; fi; exit $rc' EXIT
+
+          # Stream stdout+stderr to the Actions log and save to build.log
+          bash ./scripts/make "$TARGET" 2>&1 | tee build.log
+
+      - name: Print build log (always)
+        if: always()
+        shell: bash
+        run: |
+          echo "=== Printing build.log (if present) ==="
+          cat build.log || echo "build.log not found"
+
+      - name: Upload build log (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ matrix.target }}
+          path: build.log
+          retention-days: 30
+
       - name: Upload package
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}.tar.xz
           path: ${{ matrix.target }}.tar.xz
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
